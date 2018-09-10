@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/sort_hot"
+        android:orderInCategory="100"
+        android:title="Sort: Hot"
+        app:showAsAction="never"
+        android:visible="false" />
+
+
+    <item
+        android:id="@+id/sort_new"
+        android:orderInCategory="100"
+        android:title="Sort: New"
+        app:showAsAction="never"
+        android:visible="false" />
+
+    <item
+        android:id="@+id/sort_top_day"
+        android:orderInCategory="100"
+        android:title="Sort: Top - Day"
+        app:showAsAction="never"
+        android:visible="false" />
+
+    <item
+        android:id="@+id/sort_top_week"
+        android:orderInCategory="100"
+        android:title="Sort: Top - Week"
+        app:showAsAction="never"
+        android:visible="false" />
+    <item
+        android:id="@+id/sort_top_month"
+        android:orderInCategory="100"
+        android:title="Sort: Top - Month"
+        app:showAsAction="never"
+        android:visible="false" />
+    <item
+        android:id="@+id/sort_top_year"
+        android:orderInCategory="100"
+        android:title="Sort: Top - Year"
+        app:showAsAction="never"
+        android:visible="false"
+
+        />
+    <item
+        android:id="@+id/sort_top_all"
+        android:orderInCategory="100"
+        android:title="Sort: Top - All"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/delete_subreddit"
+        android:orderInCategory="100"
+        android:title="Remove Subreddit"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/delete_backup"
+        android:orderInCategory="100"
+        android:title="Remove backup"
+        app:showAsAction="never"
+        android:visible="false" />
+</menu>

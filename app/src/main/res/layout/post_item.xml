@@ -1,0 +1,99 @@
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_margin="7dp"
+    app:cardCornerRadius="6dp"
+    app:cardElevation="6dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:id="@+id/linearLayout_2TVs"
+            android:orientation="horizontal"
+            android:layout_toStartOf="@id/thumbnail_id"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="7dp"
+                android:id="@+id/score"
+                android:text="24353"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="subreddit"
+                android:id="@+id/subreddit_id"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+        </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/title_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/linearLayout_2TVs"
+            android:layout_alignEnd="@+id/linearLayout_2TVs"
+            android:layout_below="@+id/linearLayout_2TVs"
+            android:gravity="center_vertical"
+            android:maxLines="20"
+            android:textColor="#000000"
+            android:paddingTop="5dp"
+            android:singleLine="false"
+            android:text="You're confusing margin and padding and testing"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+
+        <TextView
+            android:id="@+id/byuser_comments_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@id/title_id"
+            android:layout_alignStart="@id/title_id"
+            android:layout_below="@id/title_id"
+            android:gravity="center_vertical"
+            android:maxLines="20"
+            android:layout_toStartOf="@id/thumbnail_id"
+            android:paddingEnd="5dp"
+            android:paddingTop="4dp"
+            android:singleLine="false"
+            android:text="by /u/novario - 100 comments"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@id/title_id"
+            android:layout_alignStart="@id/title_id"
+            android:layout_below="@id/byuser_comments_id"
+            android:gravity="center_vertical"
+            android:maxLines="20"
+            android:layout_toStartOf="@id/thumbnail_id"
+            android:paddingEnd="5dp"
+            android:paddingTop="4dp"
+            android:singleLine="false"
+            android:text="Submitted TIME"
+            android:id="@+id/submitted_at_id"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+        <ImageView
+            android:id="@+id/thumbnail_id"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:visibility="visible"
+            android:layout_marginStart="4dp"
+            android:contentDescription="@string/thumbnail" />
+
+    </RelativeLayout>
+
+</android.support.v7.widget.CardView>

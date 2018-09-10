@@ -1,0 +1,74 @@
+<resources>
+    <string name="app_name">Topace For Reddit (Offline)</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="subreddits">Subreddits</string>
+    <string name="write_name_of_subreddit_without_r">Type name of a subreddit (without /r/)</string>
+    <string name="add_subreddit">Add Subreddit</string>
+
+    <string name="table_exists">[A table exists, tap to show]</string>
+    <string name="save_posts_of_the_last_week">Save top posts from the last week till today</string>
+    <string name="save_posts_of_the_last_month">Save top posts from the last month till today</string>
+    <string name="save_posts_of_the_last_year">Save top posts from the last year till today</string>
+    <string name="save_posts_of_all_time">Save top posts from all time</string>
+    <string name="don_t_save_posts">Don\'t save posts</string>
+    <string name="archived_subreddits">Archived Subreddits</string>
+    <string name="about">About</string>
+    <string name="thumbnail">thumbnail</string>
+    <string name="no_posts_yet">No posts yet</string>
+    <string name="add_a_subreddit">Add a subreddit</string>
+    <string name="topace_logo_str">Topace logo</string>
+
+
+    <string name="no_ads_free">No Ads for Today! (Free)</string>
+    <string name="loading">Loading…</string>
+    <string name="popular">Popular</string>
+    <string name="test_interstitial_admob_id">ca-app-pub-3940256099942544/1033173712</string>
+    <string name="interstitial_admob_id">ca-app-pub-3374269774143426/1268940139</string>
+    <string name="privacy_policy_html">https://hesham-salama.github.io/privacypolicy.html</string>
+    <string name="version">Version 1.1.0</string>
+    <string name="contact_email">contact.ahleading@gmail.com</string>
+    <string name="package_store">com.ahleading.topaceforredditoffline</string>
+    <string name="number_of_root_comments">Number of root comments: </string>
+    <string name="backup_error_string">Error: This subreddit is being backed up, please wait.</string>
+    <string name="sure_remove_string">Are you sure that you want to remove /r/</string>
+    <string name="subreddit_backup">" subreddit backup?"</string>
+    <string name="removing_backup_subreddit_string">Removing Backup Subreddit</string>
+    <string name="backup_subreddit_deleted">Backup subreddit deleted.</string>
+    <string name="removing_subreddit_string">Removing Subreddit</string>
+    <string name="subreddit_removed_string">Subreddit removed.</string>
+    <string name="score_hidden_string">[score hidden]</string>
+    <string name="error_fetching_comments">Error: Couldn\'t fetch the comments - No internet connection</string>
+    <string name="_100_posts">100 posts</string>
+    <string name="_300_posts">300 posts</string>
+    <string name="white_spaces_error">Error: Subreddit can\'t consist of white spaces</string>
+    <string name="should_consist_alphanumeric_string">Error: Subreddit should only consist of English alphabet and numbers</string>
+    <string name="already_added_sub_string">Error: You have already added that subreddit.</string>
+    <string name="already_added_sub_arch_error_string">Error: You have already added that subreddit in archived list.</string>
+    <string name="subreddit_banned_nonexistent_error_string">Error: The subreddit may be banned/nonexistent</string>
+    <string name="nsfw_subreddit_error_string">Error: NSFW subreddits are not permitted for now. This might be changed in a future app version</string>
+    <string name="wait_error_string">Error: Please wait until the download finishes</string>
+    <string name="no_internet_conn_error_string">Error: No internet connection available</string>
+    <string name="wait_operation_error_string">Please wait until the operation is complete.</string>
+    <string name="write_external_error_str">The write external storage permission allows us to storage images. Please allow this permission in App Settings.</string>
+    <string name="_200_posts">200 posts</string>
+    <string name="press_again_to_exit">Press again to exit.</string>
+    <string name="popular_is_already_added_error">Error: /r/Popular is already added.</string>
+    <string name="loading_please_wait">Loading... Please wait</string>
+    <string name="save_up_to_str">Save up to:</string>
+    <string name="_500_posts">500 posts</string>
+    <string name="post_s_image">Post\'s image</string>
+
+    <plurals name="point_plural">
+        <item quantity="one">%1$d point</item>
+        <item quantity="other">%1$d points</item>
+    </plurals>
+
+    <plurals name="comment_plural">
+        <item quantity="one">%1$d comment</item>
+        <item quantity="other">%1$d comments</item>
+    </plurals>
+
+</resources>

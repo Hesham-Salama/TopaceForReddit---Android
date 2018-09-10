@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+
+    <group android:checkableBehavior="single">
+        <item android:title="@string/add_a_subreddit">
+            <menu>
+                <item
+                    android:id="@+id/add_a_subreddit"
+                    android:icon="@drawable/add"
+                    android:title="@string/add_a_subreddit" />
+            </menu>
+        </item>
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/active_subreddits_id"
+            android:title="@string/subreddits">
+            <menu>
+                <item
+                    android:id="@+id/popular_subreddits"
+                    android:title="Popular" />
+                <item
+                    android:id="@+id/all_subreddits"
+                    android:title="All"
+                    android:visible="false" />
+            </menu>
+        </item>
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/arc_subreddits_id"
+            android:title="@string/archived_subreddits"
+            android:checkable="true">
+            <menu></menu>
+        </item>
+    </group>
+
+
+    <group>
+        <item
+            android:id="@+id/reward_no_ads"
+            android:icon="@drawable/surprise"
+            android:title="@string/no_ads_free"
+            android:visible="false" />
+
+    </group>
+
+    <group>
+        <!--<item-->
+        <!--android:id="@+id/settings_id"-->
+        <!--android:icon="@drawable/settings"-->
+        <!--android:title="@string/settings" />-->
+
+        <!--<item-->
+        <!--android:id="@+id/contact_us_id"-->
+        <!--android:icon="@drawable/contactus"-->
+        <!--android:title="@string/contact_us" />-->
+
+        <item
+            android:id="@+id/about_id"
+            android:icon="@drawable/about"
+            android:title="@string/about" />
+
+    </group>
+</menu>
