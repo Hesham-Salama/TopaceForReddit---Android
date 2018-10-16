@@ -64,4 +64,11 @@
         android:title="Remove backup"
         app:showAsAction="never"
         android:visible="false" />
+
+    <item
+        android:id="@+id/save_post"
+        android:orderInCategory="100"
+        android:title="Save Post"
+        app:showAsAction="never"
+        android:visible="false" />
 </menu>

@@ -18,6 +18,7 @@
         <activity android:name=".Activities.SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -26,12 +27,13 @@
         <activity android:name=".Activities.AddSubredditActivity" />
         <activity android:name=".Activities.PostContentActivity" />
 
-        <service android:name=".SavePostsService.SavePostsOfflineService"></service>
-
+        <service android:name=".SavePostsService.SavePostsOfflineService" />
         <service
             android:name=".PostNotificationSchedule.PostNotificationJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
+        <activity android:name=".Activities.SavedPostsActivity" />
+        <activity android:name=".Activities.CustomWebView"></activity>
     </application>
 
 </manifest>

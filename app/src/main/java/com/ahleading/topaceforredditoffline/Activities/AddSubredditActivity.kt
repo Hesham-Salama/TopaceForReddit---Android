@@ -11,6 +11,7 @@ import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Ads.AdmobAds
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.Constants
+import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
 import com.ahleading.topaceforredditoffline.Model.SingletonServiceManager
 import com.ahleading.topaceforredditoffline.R
 import com.ahleading.topaceforredditoffline.ViewsControl.WindowControl
@@ -112,7 +113,8 @@ class AddSubredditActivity : AppCompatActivity() {
         //Check: banned
         //Check: want save subreddit but it's empty
         //check if it is alphanumeric
-        val urlAbout = Constants.firstPartRedditURL + subreddit + "/" + Constants.aboutSecondPart
+        val urlSubreddit = ConstructRedditURL.constructURL(subreddit)
+        val urlAbout = ConstructRedditURL.addAbout(urlSubreddit)
         try {
             if (SingletonServiceManager.isMyServiceRunning && !selectedCheckBox?.contains("Don't save")!!) {
                 return getString(R.string.wait_error_string)
@@ -126,7 +128,7 @@ class AddSubredditActivity : AppCompatActivity() {
             if (selectedCheckBox?.contains("Don't save")!!) {
                 if (postController?.sqlHelper?.checkIfAsubredditExistsInActiveTable(subreddit)!!) {
                     return getString(R.string.already_added_sub_string)
-                } else if (subreddit.toLowerCase() == "popular") {
+                } else if (subreddit.toLowerCase() == "popular" || subreddit.toLowerCase() == "all") {
                     return getString(R.string.popular_is_already_added_error)
                 }
             } else {

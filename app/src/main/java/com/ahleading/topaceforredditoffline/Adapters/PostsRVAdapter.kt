@@ -9,6 +9,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Activities.PostContentActivity
 import com.ahleading.topaceforredditoffline.Ads.AdmobAds
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
@@ -18,13 +19,17 @@ import com.ahleading.topaceforredditoffline.R
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 import kotlinx.android.synthetic.main.post_item.view.*
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.noButton
+import org.jetbrains.anko.yesButton
 import java.io.File
 import java.lang.Exception
 import java.util.*
 
+
 class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
                      private val context: Context,
-                     private val layout: Int, private val postsController: PostsController)
+                     private val layout: Int, private val postsController: PostsController, private val toBeSaved: Boolean)
     : RecyclerView.Adapter<PostsRVAdapter.ViewHolder>() {
 
 
@@ -34,6 +39,7 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
     private val AUTHOR = "author"
     private val SCORE = "score"
     private val DOMAIN = "domain"
+    private val THUMBNAIL_STORAGE = "Thumb_storage"
     private val THUMB = "thumb"
     private val IMAGE_LINK = "image_link"
     private val SUBREDDIT = "subreddit"
@@ -41,6 +47,8 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
     private val IMAGE_SRC_STORAGE = "image_src_storage"
     private val TIME_OF_POST = "time_of_post"
     private val URL_STR = "url"
+    private val ALREADY_SAVED = "already_saved"
+    private val NUMBER_OF_COMMENTS = "number_of_comments"
     private val admob_instance = AdmobAds(context)
 
 
@@ -55,6 +63,12 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
             val post = arrayList[position]
             holder.bindItems(post!!)
         }
+    }
+
+    fun removeAt(position: Int) {
+        arrayList.removeAt(position)
+        notifyItemRemoved(position)
+        notifyItemRangeChanged(position, arrayList.size)
     }
 
     override fun getItemCount(): Int {
@@ -72,10 +86,10 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
                 if (postsController.sqlHelper.getThumbnailPathFromPermaLink(item.mPermalink) != "") {
                     val file = File(postsController.sqlHelper.getThumbnailPathFromPermaLink(item.mPermalink))
                     if (file.exists()) {
-                        Picasso.get().load(file).fit().centerCrop().into(itemView.thumbnail_id)
+                        Picasso.get().load(file).fit().centerCrop().error(R.drawable.no_thumbnail).into(itemView.thumbnail_id)
                     }
                 } else {
-                    Picasso.get().load(item.mThumbnailLink).into(object : Target {
+                    Picasso.get().load(item.mThumbnailLink).placeholder(R.drawable.progress_animation).error(R.drawable.no_thumbnail).into(object : Target {
                         override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
                         }
 
@@ -88,11 +102,12 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
 
                         override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
                         }
-
                     })
                 }
+            } else if (item.mThumbnailStorage?.trim() != "") {
+                Picasso.get().load(File(item.mThumbnailStorage)).into(itemView.thumbnail_id)
             } else {
-                Picasso.get().load(item.mThumbnailLink)
+                Picasso.get().load(item.mThumbnailLink).placeholder(R.drawable.progress_animation).error(R.drawable.no_thumbnail)
                         .into(itemView.thumbnail_id)
             }
         }
@@ -120,11 +135,17 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
                 intent.putExtra(DOMAIN, item.mDomain)
                 intent.putExtra(SUBREDDIT, item.mSubreddit)
                 intent.putExtra(IMAGE_LINK, item.image_src_url)
-                intent.putExtra(IMAGE_SRC_STORAGE, postsController.sqlHelper.getImagePostPathFromPermaLink(item.mPermalink))
+//                var postImagePath = postsController.sqlHelper.getImagePostPathFromPermaLink(item.mPermalink)
+//                if(postImagePath=="") {
+//                    postImagePath = postsController.sqlHelper.getImagePostPathFromPermaLinkSavedPost(item.mPermalink)
+//                }
+                intent.putExtra(IMAGE_SRC_STORAGE, item.mImageSrcStorage)
                 intent.putExtra(THUMB_LINK, item.mThumbnailLink)
                 intent.putExtra(URL_STR, item.mUrl)
                 intent.putExtra(TIME_OF_POST, item.mCreatedUTC)
-
+                intent.putExtra(NUMBER_OF_COMMENTS, item.mNoOfComments)
+                intent.putExtra(ALREADY_SAVED, toBeSaved)
+                intent.putExtra(THUMBNAIL_STORAGE, item.mThumbnailStorage)
                 itemView.thumbnail_id.buildDrawingCache()
                 val bitmap: Bitmap? = itemView.thumbnail_id.drawingCache
                 val extras = Bundle()
@@ -134,6 +155,22 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
                 admob_instance.showInterstitalAd(Constants.MIN_ODD_FOR_INTER_AD_POST_CONTENT,
                         Constants.MAX_ODD_FOR_INTER_AD_POST_CONTENT)
             })
+
+            itemView.setOnLongClickListener {
+                if (!toBeSaved) {
+                    val msg = "Do you want to delete that post?\nTitle: ${item.mTitle}"
+                    context.alert(msg) {
+                        title = "Deleting post"
+                        yesButton {
+                            postsController.sqlHelper.deleteSavedPost(item.mPermalink)
+                            removeAt(adapterPosition)
+                            Toast.makeText(context, "Saved post has been removed", Toast.LENGTH_LONG).show()
+                        }
+                        noButton { }
+                    }.show()
+                }
+                false
+            }
         }
 
 

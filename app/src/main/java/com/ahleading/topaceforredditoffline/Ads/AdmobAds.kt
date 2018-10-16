@@ -5,6 +5,7 @@ import android.preference.PreferenceManager
 import android.util.Log
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.Constants
+import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
 import com.ahleading.topaceforredditoffline.R
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.InterstitialAd
@@ -15,6 +16,7 @@ import kotlin.collections.ArrayList
 
 
 class AdmobAds(private val context: Context) {
+
     private var mInterstitialAd: InterstitialAd? = null
     private var mInterstitialAdLoaded = false
     private val CLICKED_AD_LIMIT = 4
@@ -28,7 +30,7 @@ class AdmobAds(private val context: Context) {
         Log.i("Odd", rand.toString() + " " + myOdd.toString())
         if (rand == myOdd) {
             mInterstitialAd = InterstitialAd(context)
-            mInterstitialAd?.adUnitId = context.getString(R.string.test_interstitial_admob_id)
+            mInterstitialAd?.adUnitId = context.getString(R.string.interstitial_admob_id)
             mInterstitialAd?.loadAd(Constants.adRequest)
             mInterstitialAd?.adListener = object : AdListener() {
 
@@ -69,7 +71,7 @@ class AdmobAds(private val context: Context) {
     fun checkIfNoAdsAndBan() {
         if (!ManageAds(context).getAdStatus()) {
             val timeBanFinishes = ManageAds(context).getNoAdsPeriod()
-            val post = postController.getPosts(Constants.newestPostURL)
+            val post = postController.getPosts(ConstructRedditURL.constructURL(ConstructRedditURL.newestPostURL))
             if (post.size == 1) {
                 val pst = post[0]
                 val timeNow = pst!!.mCreatedUTC * 1000
@@ -82,7 +84,7 @@ class AdmobAds(private val context: Context) {
     }
 
     fun checkFraudlentActivity() {
-        val post = postController.getPosts(Constants.newestPostURL)
+        val post = postController.getPosts(ConstructRedditURL.constructURL(ConstructRedditURL.newestPostURL))
         if (post.size == 1) {
             val pst = post[0]
             val timeNow = pst!!.mCreatedUTC * 1000

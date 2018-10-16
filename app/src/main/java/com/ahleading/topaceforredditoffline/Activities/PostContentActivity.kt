@@ -3,7 +3,7 @@ package com.ahleading.topaceforredditoffline.Activities
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.net.Uri
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -14,6 +14,8 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.webkit.WebView
 import android.widget.LinearLayout
@@ -21,6 +23,7 @@ import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Adapters.CommentsRVAdapter
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.CommentData
+import com.ahleading.topaceforredditoffline.Model.PostData
 import com.ahleading.topaceforredditoffline.R
 import com.ahleading.topaceforredditoffline.ViewsControl.ImageTransformation
 import com.squareup.picasso.Picasso
@@ -46,14 +49,33 @@ class PostContentActivity : AppCompatActivity() {
     private val THUMB = "thumb"
     private val IMAGE_LINK = "image_link"
     private val SUBREDDIT = "subreddit"
+    private val IMAGE_SRC_STORAGE = "image_src_storage"
+    private val THUMBNAIL_STORAGE = "Thumb_storage"
     private val THUMB_LINK = "thumb_link"
     private val TIME_OF_POST = "time_of_post"
+    private val ALREADY_SAVED = "already_saved"
+    private val NUMBER_OF_COMMENTS = "number_of_comments"
     private val URL_STR = "url"
     private lateinit var postsController: PostsController
     private var commentsRVAdapter: CommentsRVAdapter? = null
     private var layoutManager: RecyclerView.LayoutManager? = null
     private val PERMISSION_REQUEST_CODE = 1
+    private var menu: Menu? = null
+    private lateinit var comments: ArrayList<CommentData>
 
+
+    private var postsImageLoadingCompleted = false
+    private var postsCommentLoadingCompleted = false
+
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        super.onCreateOptionsMenu(menu)
+        menuInflater.inflate(R.menu.nav, menu)
+        // Inflate the menu; this adds items to the action bar if it is present.
+        this.menu = menu
+        setupMenuItem()
+        return true
+    }
 
     internal inner class ClickableTableSpanImpl : ClickableTableSpan() {
         override fun newInstance(): ClickableTableSpan {
@@ -72,18 +94,112 @@ class PostContentActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_post_content)
+        setSupportActionBar(toolbar_saved)
         postsController = PostsController(this)
         setClickableIfItIsLink()
         setPostContent()
     }
 
-    fun setClickableIfItIsLink() {
+    private fun setupMenuItem() {
+        val toBeSaved = intent.getBooleanExtra(ALREADY_SAVED, true)
+        if (!toBeSaved) {
+            disableAllItems()
+        } else {
+            enableSaveItem()
+        }
+    }
+
+    private fun enableSaveItem() {
+        menu?.findItem(R.id.sort_hot)?.isVisible = false
+        menu?.findItem(R.id.sort_new)?.isVisible = false
+        menu?.findItem(R.id.sort_top_all)?.isVisible = false
+        menu?.findItem(R.id.sort_top_day)?.isVisible = false
+        menu?.findItem(R.id.sort_top_month)?.isVisible = false
+        menu?.findItem(R.id.sort_top_week)?.isVisible = false
+        menu?.findItem(R.id.sort_top_year)?.isVisible = false
+        menu?.findItem(R.id.delete_subreddit)?.isVisible = false
+        menu?.findItem(R.id.save_post)?.isVisible = true
+        menu?.findItem(R.id.delete_backup)?.isVisible = false
+    }
+
+    private fun disableAllItems() {
+        menu?.findItem(R.id.sort_hot)?.isVisible = false
+        menu?.findItem(R.id.sort_new)?.isVisible = false
+        menu?.findItem(R.id.sort_top_all)?.isVisible = false
+        menu?.findItem(R.id.sort_top_day)?.isVisible = false
+        menu?.findItem(R.id.sort_top_month)?.isVisible = false
+        menu?.findItem(R.id.sort_top_week)?.isVisible = false
+        menu?.findItem(R.id.sort_top_year)?.isVisible = false
+        menu?.findItem(R.id.delete_subreddit)?.isVisible = false
+        menu?.findItem(R.id.save_post)?.isVisible = false
+        menu?.findItem(R.id.delete_backup)?.isVisible = false
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        var thumbStorage = ""
+        var imageStorage = ""
+        when (item?.itemId) {
+            R.id.save_post -> {
+                // check if the post was already saved
+                if (postsImageLoadingCompleted && postsCommentLoadingCompleted) {
+                    val thumbLink = intent.getStringExtra(THUMB_LINK)
+                    if (thumbLink.trim() != "" && thumbLink != "self" && thumbLink != "default") {
+                        val bitmap: Bitmap? = (thumbnail_in_post_id.getDrawable() as BitmapDrawable).getBitmap()
+                        thumbStorage = saveImageToInternalStorage(bitmap)
+                    }
+                    if (post_image_id.drawable != null) {
+                        val bitmap: Bitmap? = (post_image_id.getDrawable() as BitmapDrawable).getBitmap()
+                        imageStorage = saveImageToInternalStorage(bitmap)
+                    }
+                    if (!postsController.sqlHelper.checkIfPermalinkExistsInSavedPostsTable(intent.getStringExtra(PERMALINK))) {
+                        postsController.sqlHelper.populateSavedPost(PostData(intent.getStringExtra(TITLE),
+                                intent.getStringExtra(SUBREDDIT),
+                                Integer.parseInt(intent.getStringExtra(SCORE)),
+                                intent.getStringExtra(THUMB_LINK),
+                                intent.getLongExtra(TIME_OF_POST, 0),
+                                intent.getStringExtra(AUTHOR),
+                                intent.getIntExtra(NUMBER_OF_COMMENTS, 0),
+                                intent.getStringExtra(URL_STR),
+                                intent.getStringExtra(PERMALINK),
+                                intent.getStringExtra(SELF_TEXT_VAL),
+                                thumbStorage,
+                                intent.getStringExtra(IMAGE_LINK),
+                                imageStorage,
+                                intent.getStringExtra(DOMAIN)
+                        ))
+                        postsController.sqlHelper.populateComments(comments)
+                        Toast.makeText(this, "Post saved successfully.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Error: Post is already saved.", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Error: Post is loading...", Toast.LENGTH_SHORT).show()
+                }
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun saveImageToInternalStorage(bitmap: Bitmap?): String {
+        if (bitmap != null) {
+            val generatedString = postsController.genRand(10)
+            val completePath = postsController.saveToInternalStorage(bitmap, generatedString, ".jpg")
+            return completePath
+        }
+        return ""
+    }
+
+    private fun setClickableIfItIsLink() {
         val url = intent.getStringExtra(URL_STR)
         if (url.trim() != "" && !url.contains("www.reddit.com/r/")) {
             post_header_card_view.setOnClickListener {
-                val i = Intent(Intent.ACTION_VIEW)
-                i.data = Uri.parse(url)
-                startActivity(i)
+                //                val i = Intent(Intent.ACTION_VIEW)
+//                i.data = Uri.parse(url)
+//                startActivity(i)
+                val intent = Intent(this, CustomWebView::class.java)
+                intent.putExtra("url", url)
+                startActivity(intent)
             }
         }
     }
@@ -99,7 +215,6 @@ class PostContentActivity : AppCompatActivity() {
     }
 
     fun setCommentsInRV() {
-        var comments: ArrayList<CommentData>
         val permalink = intent.getStringExtra(PERMALINK)
         runOnUiThread {
             progress_bar_comment_id.visibility = View.VISIBLE
@@ -128,6 +243,7 @@ class PostContentActivity : AppCompatActivity() {
             comments_recycler_view?.adapter = commentsRVAdapter
             comments_recycler_view.isNestedScrollingEnabled = false
             progress_bar_comment_id.visibility = View.GONE
+            postsCommentLoadingCompleted = true
         }
     }
 
@@ -151,7 +267,12 @@ class PostContentActivity : AppCompatActivity() {
         val extras = intent.extras
         val bitmap: Bitmap? = extras.getParcelable(THUMB)
 
-        if (bitmap != null) {
+        if (intent.getStringExtra(THUMBNAIL_STORAGE).trim() != "") {
+            val file = File(intent.getStringExtra(THUMBNAIL_STORAGE))
+            if (file.exists()) {
+                Picasso.get().load(file).into(thumbnail_in_post_id)
+            }
+        } else if (bitmap != null) {
             thumbnail_in_post_id.setImageBitmap(bitmap)
         } else {
             Picasso.get().load(intent.getStringExtra(THUMB_LINK))
@@ -193,9 +314,16 @@ class PostContentActivity : AppCompatActivity() {
                 } else {
                     post_image_id.visibility = View.GONE
                 }
+            } else if (intent.getStringExtra(IMAGE_SRC_STORAGE).trim() != "") {
+                val file = File(intent.getStringExtra(IMAGE_SRC_STORAGE))
+                if (file.exists()) {
+                    Picasso.get().load(file).transform(ImageTransformation.getTransformation(post_image_id))
+                            .into(post_image_id)
+                }
             } else {
 
                 Picasso.get().load(imageSrc)
+                        .placeholder(R.drawable.progress_animation)
                         .transform(ImageTransformation.getTransformation(post_image_id))
                         .into(post_image_id)
             }
@@ -205,6 +333,7 @@ class PostContentActivity : AppCompatActivity() {
                 }
             })
         }
+        postsImageLoadingCompleted = true
     }
 
     private fun saveImage() {
@@ -213,28 +342,29 @@ class PostContentActivity : AppCompatActivity() {
             alert(message) {
                 title = "Saving Picture"
                 yesButton {
-                    post_image_id.isDrawingCacheEnabled = true
-                    post_image_id.buildDrawingCache()
-                    val bitmap = Bitmap.createBitmap(post_image_id.drawingCache)
-
-                    val root = Environment.getExternalStorageDirectory().toString()
-                    val myDir = File(root + "/Topace/Pictures")
-                    myDir.mkdirs()
-                    val time = intent.getLongExtra(TIME_OF_POST, 1L).toString()
-                    val subreddit = intent.getStringExtra(SUBREDDIT)
-                    val imageName = subreddit + "_" + time + ".jpg"
-                    val file = File(myDir, imageName)
-                    if (file.exists()) file.delete()
                     try {
+                        post_image_id.isDrawingCacheEnabled = true
+                        post_image_id.buildDrawingCache()
+                        val bitmap = Bitmap.createBitmap(post_image_id.drawingCache)
+
+                        val root = Environment.getExternalStorageDirectory().toString()
+                        val myDir = File(root + "/Topace/Pictures")
+                        myDir.mkdirs()
+                        val time = intent.getLongExtra(TIME_OF_POST, 1L).toString()
+                        val subreddit = intent.getStringExtra(SUBREDDIT)
+                        val imageName = subreddit + "_" + time + ".jpg"
+                        val file = File(myDir, imageName)
+                        if (file.exists()) file.delete()
                         val out = FileOutputStream(file)
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
                         out.flush()
                         out.close()
 //                        val pathURI = file.toURI().toString()
                         Toast.makeText(applicationContext, "Image ($imageName) is saved in Topace/Pictures/ directory",
                                 Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        Log.i("PostContentActivity: ", e.message)
+                        Toast.makeText(applicationContext, "Image saving failed :/", Toast.LENGTH_LONG).show()
                     }
                 }
                 noButton { }

@@ -1,6 +1,7 @@
 package com.ahleading.topaceforredditoffline.Adapters
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Build
 import android.support.v7.app.AlertDialog
 import android.support.v7.widget.RecyclerView
@@ -39,6 +40,14 @@ class CommentsRVAdapter(private val arrayList: ArrayList<CommentData>,
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bindItems(item: CommentData) {
             itemView.username_of_comment_id.text = item.mUser
+            if (item.isSubmitter) {
+                itemView.username_of_comment_id.setTextColor(Color.parseColor("#32CD32"))
+                itemView.username_of_comment_id.text = itemView.username_of_comment_id.text.toString() + " [OP]"
+            }
+            if (item.mDistinguished.equals("moderator")) {
+                itemView.username_of_comment_id.setTextColor(Color.parseColor("#a3492c"))
+                itemView.username_of_comment_id.text = itemView.username_of_comment_id.text.toString() + " [A]"
+            }
             val scorePoints: String = if (item.isScoreHidden) {
                 context.getString(R.string.score_hidden_string)
             } else {

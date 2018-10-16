@@ -15,15 +15,16 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Adapters.PostsRVAdapter
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.Constants
+import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
 import com.ahleading.topaceforredditoffline.Model.SingletonServiceManager
 import com.ahleading.topaceforredditoffline.PostNotificationSchedule.ScheduleJobUtility
 import com.ahleading.topaceforredditoffline.R
 import com.ahleading.topaceforredditoffline.ViewsControl.AppRater
+import com.ahleading.topaceforredditoffline.ViewsControl.LinearLayoutManagerWrapper
 import com.ahleading.topaceforredditoffline.ViewsControl.WindowControl
 import com.google.android.gms.ads.MobileAds
 import kotlinx.android.synthetic.main.activity_nav.*
@@ -89,8 +90,9 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
         nav_view.setNavigationItemSelectedListener(this)
 
         postsAdapter = PostsRVAdapter(postsController.postsArrayList, this, R.layout.post_item,
-                postsController)
-        layoutManager = LinearLayoutManager(this, LinearLayout.VERTICAL, false)
+                postsController, true)
+//        layoutManager = LinearLayoutManager(this, LinearLayout.VERTICAL, false)
+        layoutManager = LinearLayoutManagerWrapper(this, LinearLayoutManager.VERTICAL, false)
         recycler_view?.isNestedScrollingEnabled = false
         recycler_view?.layoutManager = layoutManager
         recycler_view?.adapter = postsAdapter
@@ -129,8 +131,8 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
                 try {
                     val itemsCount = postsController.getNumberOfPostsInThisPatch()
                     postsAdapter?.notifyItemRangeInserted(oldSize, itemsCount)
-                } catch (e: IndexOutOfBoundsException) {
-                    Log.i("Oops", "ExcceptionOutOfbound")
+                } catch (e: Exception) {
+                    Log.i("NavActivity", e.message)
                 }
                 loading_more_progress_bar.visibility = View.GONE
             }
@@ -165,7 +167,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
         when (item.itemId) {
             R.id.sort_new -> {
                 Thread(Runnable {
-                    updateRedditTimeLine(subredditMode, subAndStatus, Constants.secondPartRedditURL_NEW)
+                    updateRedditTimeLine(subredditMode, subAndStatus, ConstructRedditURL.secondPartRedditURL_NEW)
                 }).start()
                 return true
             }
@@ -177,36 +179,36 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             }
             R.id.sort_top_day -> {
                 Thread(Runnable {
-                    updateRedditTimeLine(subredditMode, subAndStatus, Constants.secondPartRedditURL_TOP
-                            + Constants.secondPartDay)
+                    updateRedditTimeLine(subredditMode, subAndStatus, ConstructRedditURL.secondPartRedditURL_TOP
+                            + ConstructRedditURL.secondPartDay)
                 }).start()
                 return true
             }
             R.id.sort_top_week -> {
                 Thread(Runnable {
-                    updateRedditTimeLine(subredditMode, subAndStatus, Constants.secondPartRedditURL_TOP
-                            + Constants.secondPartWeek)
+                    updateRedditTimeLine(subredditMode, subAndStatus, ConstructRedditURL.secondPartRedditURL_TOP
+                            + ConstructRedditURL.secondPartWeek)
                 }).start()
                 return true
             }
             R.id.sort_top_month -> {
                 Thread(Runnable {
-                    updateRedditTimeLine(subredditMode, subAndStatus, Constants.secondPartRedditURL_TOP
-                            + Constants.secondPartMonth)
+                    updateRedditTimeLine(subredditMode, subAndStatus, ConstructRedditURL.secondPartRedditURL_TOP
+                            + ConstructRedditURL.secondPartMonth)
                 }).start()
                 return true
             }
             R.id.sort_top_year -> {
                 Thread(Runnable {
-                    updateRedditTimeLine(subredditMode, subAndStatus, Constants.secondPartRedditURL_TOP
-                            + Constants.secondPartYear)
+                    updateRedditTimeLine(subredditMode, subAndStatus, ConstructRedditURL.secondPartRedditURL_TOP
+                            + ConstructRedditURL.secondPartYear)
                 }).start()
                 return true
             }
             R.id.sort_top_all -> {
                 Thread(Runnable {
-                    updateRedditTimeLine(subredditMode, subAndStatus, Constants.secondPartRedditURL_TOP
-                            + Constants.secondPartAll)
+                    updateRedditTimeLine(subredditMode, subAndStatus, ConstructRedditURL.secondPartRedditURL_TOP
+                            + ConstructRedditURL.secondPartAll)
                 }).start()
                 return true
             }
@@ -277,6 +279,10 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             R.id.about_id -> {
                 val i = Intent(this, AboutActivity::class.java)
                 startActivityForResult(i, REQUEST_CODE)
+            }
+            R.id.saved_posts -> {
+                val i = Intent(this, SavedPostsActivity::class.java)
+                startActivity(i)
             }
             else -> {
                 when (item.itemId) {
@@ -375,6 +381,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             menu?.findItem(R.id.sort_top_week)?.isVisible = true
             menu?.findItem(R.id.sort_top_year)?.isVisible = true
             menu?.findItem(R.id.delete_backup)?.isVisible = false
+            menu?.findItem(R.id.save_post)?.isVisible = false
             menu?.findItem(R.id.delete_subreddit)?.isVisible = enableDeleteSubreddit
         }
     }
@@ -389,6 +396,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             menu?.findItem(R.id.sort_top_week)?.isVisible = false
             menu?.findItem(R.id.sort_top_year)?.isVisible = false
             menu?.findItem(R.id.delete_subreddit)?.isVisible = false
+            menu?.findItem(R.id.save_post)?.isVisible = false
             menu?.findItem(R.id.delete_backup)?.isVisible = true
         }
     }
@@ -404,6 +412,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             menu?.findItem(R.id.sort_top_year)?.isVisible = false
             menu?.findItem(R.id.delete_subreddit)?.isVisible = false
             menu?.findItem(R.id.delete_backup)?.isVisible = false
+            menu?.findItem(R.id.save_post)?.isVisible = false
         }
     }
 
@@ -459,7 +468,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
     }
 
     private fun updateRedditTimeLine(subredditMode: Int, subreddit: String = "",
-                                     parameters: String = Constants.limit25, append: Boolean = false) {
+                                     parameters: String = ConstructRedditURL.limit25, append: Boolean = false) {
         // 1 - All, 2 - active subreddit, 3 - archived subreddit
         runOnUiThread {
             disableAllMenuItems()
@@ -482,10 +491,10 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             }
             when (subredditMode) {
                 1 -> {
-                    postsController.updateRVWithActiveSubreddits(parameters, append)
+                    postsController.updateRVWithActiveSubreddit(parameters, append)
                 }
                 2 -> {
-                    postsController.updateRVWithActiveSubreddit(subreddit, parameters, append)
+                    postsController.updateRVWithActiveSubreddit(parameters, append, subreddit)
                 }
                 3 -> {
                     postsController.updateRVWithArchivedSubreddit(subreddit)
@@ -508,7 +517,8 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             }
         }
         // An exception to /r/popular
-        val mode = if (subreddit.toLowerCase() == "popular") 1 else subredditMode
+        val mode = if (subreddit.toLowerCase().equals("popular") || subreddit.toLowerCase() == "all"
+                || subreddit.contains("+")) 1 else subredditMode
         enableMenuItems(mode)
         runOnUiThread {
             if (postsAdapter?.itemCount == 0) {

@@ -15,6 +15,7 @@ import android.util.Log
 import com.ahleading.topaceforredditoffline.Activities.SplashActivity
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.Constants
+import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
 import com.ahleading.topaceforredditoffline.Model.PostData
 import com.ahleading.topaceforredditoffline.R
 import java.net.HttpURLConnection
@@ -101,8 +102,8 @@ class PostNotificationJobService : JobService() {
     private fun pickPost(jobParameters: JobParameters) {
         try {
             val postsController = PostsController(applicationContext)
-            val arrPosts = postsController.getPosts(postsController.getActiveSubs()
-                    + "/" + Constants.limit10)
+            val parameters = postsController.getActiveSubs() + "/" + ConstructRedditURL.limit10
+            val arrPosts = postsController.getPosts(ConstructRedditURL.constructURL(parameters))
             if (arrPosts.size > 0) {
                 var count = 0
                 var postdata: PostData

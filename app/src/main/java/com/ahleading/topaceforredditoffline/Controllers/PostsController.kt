@@ -4,10 +4,9 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
-import android.os.Build
-import android.text.Html
+import android.util.Log
 import com.ahleading.topaceforredditoffline.Model.CommentData
-import com.ahleading.topaceforredditoffline.Model.Constants
+import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
 import com.ahleading.topaceforredditoffline.Model.PostData
 import com.ahleading.topaceforredditoffline.Model.PostDataSQLHelper
 import com.ahleading.topaceforredditoffline.R
@@ -52,7 +51,8 @@ class PostsController(val context: Context) {
     private val BODY_HTML_STR = "body_html"
     private val DOMAIN = "domain"
     private val SCORE_HIDDEN = "score_hidden"
-
+    private val DISTINGUISHED = "distinguished"
+    private val IS_SUBMITTER = "is_submitter"
 
     init {
         postsArrayList = ArrayList()
@@ -111,26 +111,32 @@ class PostsController(val context: Context) {
         this.numberOfGottenPostsInThisPatch = postsSizeInThisPatch
     }
 
-    fun updateRVWithActiveSubreddits(params: String, append: Boolean) {
-        if (!append) {
-            postsArrayList.clear()
-        }
-        val subs = getActiveSubs()
-        setSubredditAndItsProperities(subs, params, true)
-        val finalParams = modifyParamsIfNeeded(params)
-        val arrayList = getPosts(subs + finalParams)
-        val lastID = getIDFromPermalink(arrayList[arrayList.size - 1]!!.mPermalink)
-        setPostsSizeAndItsLastID(lastID, arrayList.size)
-        postsArrayList.addAll(arrayList)
-    }
+//    fun updateRVWithActiveSubreddits(params: String, append: Boolean) {
+//        if (!append) {
+//            postsArrayList.clear()
+//        }
+//        val subs = getActiveSubs()
+//        setSubredditAndItsProperities(subs, params, true)
+//        val finalParams = modifyParamsIfNeeded(params)
+//        val arrayList = getPosts(subs + finalParams)
+//        val lastID = getIDFromPermalink(arrayList[arrayList.size - 1]!!.mPermalink)
+//        setPostsSizeAndItsLastID(lastID, arrayList.size)
+//        postsArrayList.addAll(arrayList)
+//    }
 
-    fun updateRVWithActiveSubreddit(subreddit: String, params: String, append: Boolean) {
+    fun updateRVWithActiveSubreddit(params: String, append: Boolean, subreddit: String = "") {
         if (!append) {
             postsArrayList.clear()
         }
-        setSubredditAndItsProperities(subreddit, params, true)
+        var subredditName = if (subreddit.equals("")) {
+            getActiveSubs()
+        } else {
+            subreddit
+        }
+        setSubredditAndItsProperities(subredditName, params, true)
         val prms = modifyParamsIfNeeded(params)
-        val arrayList = getPosts(subreddit + prms)
+        val url = ConstructRedditURL.constructURL(subredditName + prms)
+        val arrayList = getPosts(url)
         val lastID = getIDFromPermalink(arrayList[arrayList.size - 1]!!.mPermalink)
         setPostsSizeAndItsLastID(lastID, arrayList.size)
         postsArrayList.addAll(arrayList)
@@ -144,18 +150,19 @@ class PostsController(val context: Context) {
         postsArrayList.addAll(arrayList)
     }
 
-    fun getPosts(subredditsAndAnyParameters: String): ArrayList<PostData?> {
-        val url = Constants.firstPartRedditURL + subredditsAndAnyParameters
-        val postsJson = downloadController.getJSONReddit(url)
+    fun getPosts(url: String): ArrayList<PostData?> {
+        val jsonCompURL = ConstructRedditURL.addRawJsonCompatibility(url)
+        Log.i("PostsController", jsonCompURL)
+        val postsJson = downloadController.getJSONReddit(jsonCompURL)
         return extractPostInfo(postsJson!!)
     }
 
     fun archivePosts(subreddit: String, saveOptionStr: String, numberOfSavedPostsStr: String) {
         val subredditAndParams: String = when {
-            saveOptionStr.contains(Constants.secondPartWeek) -> subreddit + Constants.secondPartRedditURL_TOP_100 + Constants.secondPartWeek
-            saveOptionStr.contains(Constants.secondPartMonth) -> subreddit + Constants.secondPartRedditURL_TOP_100 + Constants.secondPartMonth
-            saveOptionStr.contains(Constants.secondPartYear) -> subreddit + Constants.secondPartRedditURL_TOP_100 + Constants.secondPartYear
-            else -> subreddit + Constants.secondPartRedditURL_TOP_100 + Constants.secondPartAll
+            saveOptionStr.contains("week") -> subreddit + ConstructRedditURL.secondPartRedditURL_TOP_100 + ConstructRedditURL.secondPartWeek
+            saveOptionStr.contains("month") -> subreddit + ConstructRedditURL.secondPartRedditURL_TOP_100 + ConstructRedditURL.secondPartMonth
+            saveOptionStr.contains("year") -> subreddit + ConstructRedditURL.secondPartRedditURL_TOP_100 + ConstructRedditURL.secondPartYear
+            else -> subreddit + ConstructRedditURL.secondPartRedditURL_TOP_100 + ConstructRedditURL.secondPartAll
         }
         val i = when (numberOfSavedPostsStr) {
             context.getString(R.string._100_posts) -> 1
@@ -170,9 +177,10 @@ class PostsController(val context: Context) {
                 val lastIndex = arrayListOfPosts.size - 1
                 val postData = arrayListOfPosts[lastIndex]
                 val lastID = getIDFromPermalink(postData?.mPermalink!!)
-                params = subredditAndParams + Constants.AFTER_ID + lastID
+                params = ConstructRedditURL.addAfterID(subredditAndParams, lastID)
             }
-            arrayListOfPosts.addAll(getPosts(params))
+            val url = ConstructRedditURL.constructURL(params)
+            arrayListOfPosts.addAll(getPosts(url))
             if (arrayListOfPosts.size == 0) {
                 return
             }
@@ -225,15 +233,16 @@ class PostsController(val context: Context) {
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-
         }
         return mypath.absolutePath
     }
 
     fun getComments(subreddit: String, IDPost: String): ArrayList<CommentData> {
         val commentsArrayList: ArrayList<CommentData>
-        val urlStr = Constants.firstPartRedditURL + subreddit + Constants.secondPartRedditURL_COMMENT + IDPost
-        val commentsJson = downloadController.getJSONReddit(urlStr)
+//        val urlStr = Constants.firstPartRedditURL + subreddit + Constants.secondPartRedditURL_COMMENT + IDPost
+        var url = ConstructRedditURL.constructURL(subreddit)
+        url = ConstructRedditURL.addComments(url, IDPost)
+        val commentsJson = downloadController.getJSONReddit(url)
         commentsArrayList = extractCommentsInfo(commentsJson!!)
         return commentsArrayList
     }
@@ -254,7 +263,12 @@ class PostsController(val context: Context) {
             val score = data2.getInt(SCORE_STR)
             val createdUTC = data2.getLong(CREATED_UTC_STR)
             val isScoreHidden = data2.getBoolean(SCORE_HIDDEN)
-            val commentDataObj = CommentData(author, commentHTML, score, permalink, createdUTC, isScoreHidden)
+            var distinguishedStatus: String? = data2.getString(DISTINGUISHED)
+            if (distinguishedStatus == null) {
+                distinguishedStatus = "null"
+            }
+            val isSubmitter = data2.getBoolean(IS_SUBMITTER)
+            val commentDataObj = CommentData(author, commentHTML, score, permalink, createdUTC, isScoreHidden, distinguishedStatus, isSubmitter)
             commentDataObjectsList.add(commentDataObj)
         }
         return commentDataObjectsList
@@ -278,8 +292,8 @@ class PostsController(val context: Context) {
                 val src = imagesArray.getJSONObject(0).getJSONObject(SOURCE_STR)
                 imageLink = src.getString(URL_STR)
             }
-            val title = getDecodedStringFromHTML(topic.getString(TITLE_STR))
-            val selfText = getDecodedStringFromHTML(topic.getString(SELF_TEXT_HTML_STR))
+            val title = topic.getString(TITLE_STR)
+            val selfText = topic.getString(SELF_TEXT_HTML_STR)
             val postDataObj = PostData(title,
                     topic.getString(SUBREDDIT_STR),
                     topic.getInt(SCORE_STR),
@@ -300,13 +314,13 @@ class PostsController(val context: Context) {
         return postDataObjectsList
     }
 
-    fun getDecodedStringFromHTML(sentence: String): String {
-        return if (Build.VERSION.SDK_INT >= 24) {
-            Html.fromHtml(sentence, Html.FROM_HTML_MODE_LEGACY).toString()
-        } else {
-            Html.fromHtml(sentence).toString()
-        }
-    }
+//    fun getDecodedStringFromHTML(sentence: String): String {
+//        return if (Build.VERSION.SDK_INT >= 24) {
+//            Html.fromHtml(sentence, Html.FROM_HTML_MODE_LEGACY).toString()
+//        } else {
+//            Html.fromHtml(sentence).toString()
+//        }
+//    }
 
     companion object {
         fun extractTimeOfNow(delta: Long): String? {

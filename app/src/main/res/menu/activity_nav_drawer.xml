@@ -51,6 +51,14 @@
     </group>
 
     <group>
+        <item
+            android:id="@+id/saved_posts"
+            android:icon="@drawable/savedposts"
+            android:title="@string/saved_posts" />
+
+    </group>
+
+    <group>
         <!--<item-->
         <!--android:id="@+id/settings_id"-->
         <!--android:icon="@drawable/settings"-->

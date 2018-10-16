@@ -29,11 +29,15 @@ class PostDataSQLHelper(context: Context) : SQLiteOpenHelper(context, DATABASENA
     private val IMAGE_SRC_STORAGE = "image_src_storage"
     private val DOMAIN = "domain"
     private val COMMENTOR = "commentor"
+    private val DISTINGUISHED = "distinguished"
+    private val IS_SUBMITTER = "is_submitter"
     private val COMMENT_TEXT = "comment_text"
     private val POINTS = "points"
     private val SCORE_HIDDEN = "score_hidden"
     private val TABLE_NAME3 = "comment_table"
     private val TABLE_NAME4 = "posts_notification_table"
+
+    private val TABLE_NAME5 = "saved_posts"
 
     private var db: SQLiteDatabase = this.writableDatabase
     // http://groups.google.com/group/android-developers/msg/74ee967b2fcff770
@@ -41,7 +45,7 @@ class PostDataSQLHelper(context: Context) : SQLiteOpenHelper(context, DATABASENA
 
     companion object {
         private val DATABASENAME = "Database1"
-        private val DATABASEVERSION = 1
+        private val DATABASEVERSION = 2
     }
 
     override fun close() {
@@ -60,24 +64,33 @@ class PostDataSQLHelper(context: Context) : SQLiteOpenHelper(context, DATABASENA
                 "$IMAGE_SRC_STORAGE TEXT, $DOMAIN TEXT )"
 
         val query2 = "CREATE TABLE IF NOT EXISTS $TABLE_NAME2 ($SUBREDDIT_NAME TEXT PRIMARY KEY)"
-        val query3 = "CREATE TABLE IF NOT EXISTS $TABLE_NAME3 ($PERMALINK TEXT PRIMARY KEY, $COMMENTOR TEXT, $COMMENT_TEXT TEXT, $POINTS INTEGER," +
-                " $SCORE_HIDDEN INTEGER, $CREATED_UTC INTEGER)"
+        val query3 = "CREATE TABLE IF NOT EXISTS $TABLE_NAME3 ($PERMALINK TEXT PRIMARY KEY, $COMMENTOR TEXT, $COMMENT_TEXT TEXT," +
+                " $POINTS INTEGER," +
+                " $SCORE_HIDDEN INTEGER, $CREATED_UTC INTEGER, $DISTINGUISHED TEXT, $IS_SUBMITTER INTEGER)"
         val query4 = "CREATE TABLE IF NOT EXISTS $TABLE_NAME4 ($PERMALINK TEXT PRIMARY KEY)"
+
+        val query5 = "CREATE TABLE IF NOT EXISTS $TABLE_NAME5 ($PERMALINK TEXT PRIMARY KEY, $TITLE TEXT, " +
+                "$SUBREDDIT_NAME TEXT, $SCORE INTEGER, $THUMBNAIL_LINK TEXT, $CREATED_UTC INTEGER, $AUTHOR TEXT," +
+                "$NUMBER_OF_COMMENTS INTEGER, $WEBSITE_URL TEXT, $TEXT_HTML TEXT, $THUMBNAIL_STORAGE TEXT, $IMAGE_SRC_URL TEXT, " +
+                "$IMAGE_SRC_STORAGE TEXT, $DOMAIN TEXT )"
+
 
         p0?.execSQL(query)
         p0?.execSQL(query2)
         p0?.execSQL(query3)
         p0?.execSQL(query4)
+        p0?.execSQL(query5)
     }
 
     override fun onUpgrade(p0: SQLiteDatabase?, p1: Int, p2: Int) {
-        p0?.execSQL("DROP TABLE IF EXIST $TABLE_NAME")
-        p0?.execSQL("DROP TABLE IF EXIST $TABLE_NAME2")
+        p0?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
+        p0?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME2")
+        p0?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME3")
+        p0?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME4")
         onCreate(p0)
     }
 
     fun populatePostsSQL(posts: ArrayList<PostData?>) {
-
         try {
             db.beginTransaction()
             for (i in 0 until posts.size) {
@@ -416,6 +429,9 @@ class PostDataSQLHelper(context: Context) : SQLiteOpenHelper(context, DATABASENA
                 val scoreHidden = if (comment.isScoreHidden) 1 else 0
                 values.put(SCORE_HIDDEN, scoreHidden)
                 values.put(CREATED_UTC, comment.mCreatedUTC)
+                values.put(DISTINGUISHED, comment.mDistinguished)
+                val submittedVal = if (comment.isSubmitter) 1 else 0
+                values.put(IS_SUBMITTER, submittedVal)
                 db.insert(TABLE_NAME3, null, values)
             }
             db.setTransactionSuccessful()
@@ -442,7 +458,9 @@ class PostDataSQLHelper(context: Context) : SQLiteOpenHelper(context, DATABASENA
                     val perm = cursor.getString(cursor.getColumnIndex(PERMALINK))
                     val isScoreHidden = cursor.getInt(cursor.getColumnIndex(SCORE_HIDDEN)) == 1
                     val createdUTC = cursor.getLong(cursor.getColumnIndex(CREATED_UTC))
-                    val comment = CommentData(commentor, commentText, score, perm, createdUTC, isScoreHidden)
+                    val distinguishedStatus: String = cursor.getString(cursor.getColumnIndex(DISTINGUISHED))
+                    val isSubmitter = cursor.getInt(cursor.getColumnIndex(IS_SUBMITTER)) == 1
+                    val comment = CommentData(commentor, commentText, score, perm, createdUTC, isScoreHidden, distinguishedStatus, isSubmitter)
                     commentsArray.add(comment)
                 } while (cursor.moveToNext())
             }
@@ -488,5 +506,158 @@ class PostDataSQLHelper(context: Context) : SQLiteOpenHelper(context, DATABASENA
             db.endTransaction()
             // db.close()
         }
+    }
+
+    fun populateSavedPost(posts: PostData) {
+        try {
+            db.beginTransaction()
+            val values = ContentValues()
+            values.put(PERMALINK, posts.mPermalink)
+            values.put(TITLE, posts.mTitle)
+            val subreddit = posts.mSubreddit.substring(0, 1).toUpperCase() +
+                    posts.mSubreddit.substring(1).toLowerCase()
+            values.put(SUBREDDIT_NAME, subreddit)
+            values.put(SCORE, posts.mScore)
+            values.put(THUMBNAIL_LINK, posts.mThumbnailLink)
+            values.put(CREATED_UTC, posts.mCreatedUTC)
+            values.put(AUTHOR, posts.mAuthor)
+            values.put(NUMBER_OF_COMMENTS, posts.mNoOfComments)
+            values.put(WEBSITE_URL, posts.mUrl)
+            values.put(TEXT_HTML, posts.mSelfText_HTML)
+            values.put(THUMBNAIL_STORAGE, posts.mThumbnailStorage)
+            values.put(IMAGE_SRC_URL, posts.image_src_url)
+            values.put(IMAGE_SRC_STORAGE, posts.mImageSrcStorage)
+            values.put(DOMAIN, posts.mDomain)
+            db.insert(TABLE_NAME5, null, values)
+            db.setTransactionSuccessful()
+        } catch (e: SQLException) {
+            Log.e("SQLEXCEPTION", e.toString())
+        } finally {
+            db.endTransaction()
+            // db.close()
+        }
+    }
+
+    fun getSavedPosts(): ArrayList<PostData?> {
+        val list = ArrayList<PostData?>()
+        val cursor: Cursor = db.rawQuery("SELECT * FROM $TABLE_NAME5 ORDER BY $CREATED_UTC DESC", null)
+        try {
+            db.beginTransaction()
+            if (cursor.count > 0) {
+                cursor.moveToFirst()
+                do {
+                    val title = cursor.getString(cursor.getColumnIndex(TITLE))
+                    val subredditName = cursor.getString(cursor.getColumnIndex(SUBREDDIT_NAME))
+                    val score = cursor.getInt(cursor.getColumnIndex(SCORE))
+                    val thumbnailLink = cursor.getString(cursor.getColumnIndex(THUMBNAIL_LINK))
+                    val createdUTC = cursor.getLong(cursor.getColumnIndex(CREATED_UTC))
+                    val author = cursor.getString(cursor.getColumnIndex(AUTHOR))
+                    val numComments = cursor.getInt(cursor.getColumnIndex(NUMBER_OF_COMMENTS))
+                    val url = cursor.getString(cursor.getColumnIndex(WEBSITE_URL))
+                    val permalink = cursor.getString(cursor.getColumnIndex(PERMALINK))
+                    val textHTML = cursor.getString(cursor.getColumnIndex(TEXT_HTML))
+                    val thumb = cursor.getString(cursor.getColumnIndex(THUMBNAIL_STORAGE))
+                    val imageSrcURL = cursor.getString(cursor.getColumnIndex(IMAGE_SRC_URL))
+                    val imageSrcStorage = cursor.getString(cursor.getColumnIndex(IMAGE_SRC_STORAGE))
+                    val domain = cursor.getString(cursor.getColumnIndex(DOMAIN))
+                    val user = PostData(title, subredditName, score, thumbnailLink, createdUTC, author, numComments
+                            , url, permalink, textHTML, thumb, imageSrcURL, imageSrcStorage, domain)
+                    list.add(user)
+                } while (cursor.moveToNext())
+            }
+            db.setTransactionSuccessful()
+        } catch (e: SQLException) {
+            Log.e("SQLEXCEPTION", e.toString())
+        } finally {
+            cursor.close()
+            db.endTransaction()
+            // db.close()
+        }
+        return list
+    }
+
+    fun checkIfPermalinkExistsInSavedPostsTable(permalink: String): Boolean {
+        var check: Boolean = false
+        val cursor: Cursor = db.rawQuery("SELECT $PERMALINK FROM $TABLE_NAME5 WHERE $PERMALINK = \"$permalink\"", null)
+        try {
+            db.beginTransaction()
+            check = cursor.count > 0
+            db.setTransactionSuccessful()
+        } catch (e: SQLException) {
+            Log.e("SQLEXCEPTION", e.toString())
+        } finally {
+            cursor.close()
+
+            db.endTransaction()
+            // db.close()
+        }
+        return check
+    }
+
+    fun deleteSavedPost(permaLink: String) {
+        var thumb: String? = null
+        var image: String? = null
+
+        val cursor: Cursor = db.rawQuery("SELECT $THUMBNAIL_STORAGE, $IMAGE_SRC_STORAGE FROM $TABLE_NAME5 " +
+                "WHERE $PERMALINK = \"$permaLink\"", null)
+        try {
+            db.beginTransaction()
+            if (cursor.count > 0) {
+                cursor.moveToFirst()
+                do {
+                    thumb = cursor.getString(cursor.getColumnIndex(THUMBNAIL_STORAGE))
+                    image = cursor.getString(cursor.getColumnIndex(IMAGE_SRC_STORAGE))
+                } while (cursor.moveToNext())
+            }
+            db.setTransactionSuccessful()
+
+            if (thumb != null && !thumb.trim().equals("")) {
+                val file: File? = File(thumb)
+                if (file != null && file.exists()) {
+                    file.delete()
+                }
+            }
+            if (image != null && !image.trim().equals("")) {
+                val file: File? = File(image)
+                if (file != null && file.exists()) {
+                    file.delete()
+                }
+            }
+            //add delete comments
+            var whereClause = "$PERMALINK like ?"
+            var permlk = arrayOf("$permaLink%")
+            db.delete(TABLE_NAME3, whereClause, permlk)
+
+            whereClause = "$PERMALINK like ?"
+            permlk = arrayOf("$permaLink%")
+            db.delete(TABLE_NAME5, whereClause, permlk)
+
+        } catch (e: SQLException) {
+            Log.e("SQLEXCEPTION", e.toString())
+        } finally {
+            cursor.close()
+            db.endTransaction()
+            // db.close()
+        }
+    }
+
+    fun getImagePostPathFromPermaLinkSavedPost(permalink: String): String {
+        var check = ""
+        val cursor: Cursor = db.rawQuery("SELECT $IMAGE_SRC_STORAGE FROM $TABLE_NAME5 WHERE $PERMALINK = \"$permalink\"", null)
+        try {
+            db.beginTransaction()
+            if (cursor.count > 0) {
+                cursor.moveToFirst()
+                check = cursor.getString(cursor.getColumnIndex(IMAGE_SRC_STORAGE))
+            }
+            db.setTransactionSuccessful()
+        } catch (e: SQLException) {
+            Log.e("SQLEXCEPTION", e.toString())
+        } finally {
+            cursor.close()
+            db.endTransaction()
+            // db.close()
+        }
+        return check
     }
 }
