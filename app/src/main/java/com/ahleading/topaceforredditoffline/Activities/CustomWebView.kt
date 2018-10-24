@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.view.MenuItem
 import android.webkit.URLUtil
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -20,8 +21,8 @@ class CustomWebView : AppCompatActivity() {
         val url = intent.getStringExtra("url")
         webView_id.settings.javaScriptEnabled = true
         webView_id.loadUrl(url)
-
         setSupportActionBar(toolbar_web_view)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         toolbar_web_view.setOnLongClickListener {
             val clipboard = this.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
@@ -55,6 +56,16 @@ class CustomWebView : AppCompatActivity() {
                     supportActionBar?.title = view?.title
                 }
             }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 }

@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="com.android.vending.BILLING" />
+
 
     <application
         android:allowBackup="true"
@@ -24,16 +26,33 @@
         </activity>
         <activity android:name=".Activities.NavActivity" />
         <activity android:name=".Activities.AboutActivity" />
-        <activity android:name=".Activities.AddSubredditActivity" />
-        <activity android:name=".Activities.PostContentActivity" />
+        <activity android:name=".Activities.AddSubredditActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".Activities.NavActivity" />
+        </activity>
+        <activity android:name=".Activities.PostContentActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".Activities.NavActivity" />
+        </activity>
 
         <service android:name=".SavePostsService.SavePostsOfflineService" />
         <service
             android:name=".PostNotificationSchedule.PostNotificationJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
-        <activity android:name=".Activities.SavedPostsActivity" />
-        <activity android:name=".Activities.CustomWebView"></activity>
+        <activity android:name=".Activities.SavedPostsActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".Activities.NavActivity" />
+        </activity>
+        <activity android:name=".Activities.CustomWebView">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".Activities.PostContentActivity" />
+        </activity>
+        <activity android:name="IAB" />
     </application>
 
 </manifest>

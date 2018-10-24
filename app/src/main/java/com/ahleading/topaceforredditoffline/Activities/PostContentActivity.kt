@@ -21,8 +21,10 @@ import android.webkit.WebView
 import android.widget.LinearLayout
 import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Adapters.CommentsRVAdapter
+import com.ahleading.topaceforredditoffline.Ads.AdmobAds
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.CommentData
+import com.ahleading.topaceforredditoffline.Model.Constants
 import com.ahleading.topaceforredditoffline.Model.PostData
 import com.ahleading.topaceforredditoffline.R
 import com.ahleading.topaceforredditoffline.ViewsControl.ImageTransformation
@@ -95,6 +97,7 @@ class PostContentActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_post_content)
         setSupportActionBar(toolbar_saved)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         postsController = PostsController(this)
         setClickableIfItIsLink()
         setPostContent()
@@ -144,11 +147,11 @@ class PostContentActivity : AppCompatActivity() {
                 if (postsImageLoadingCompleted && postsCommentLoadingCompleted) {
                     val thumbLink = intent.getStringExtra(THUMB_LINK)
                     if (thumbLink.trim() != "" && thumbLink != "self" && thumbLink != "default") {
-                        val bitmap: Bitmap? = (thumbnail_in_post_id.getDrawable() as BitmapDrawable).getBitmap()
+                        val bitmap: Bitmap? = (thumbnail_in_post_id.drawable as BitmapDrawable).bitmap
                         thumbStorage = saveImageToInternalStorage(bitmap)
                     }
                     if (post_image_id.drawable != null) {
-                        val bitmap: Bitmap? = (post_image_id.getDrawable() as BitmapDrawable).getBitmap()
+                        val bitmap: Bitmap? = (post_image_id.drawable as BitmapDrawable).bitmap
                         imageStorage = saveImageToInternalStorage(bitmap)
                     }
                     if (!postsController.sqlHelper.checkIfPermalinkExistsInSavedPostsTable(intent.getStringExtra(PERMALINK))) {
@@ -175,6 +178,10 @@ class PostContentActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this, "Error: Post is loading...", Toast.LENGTH_SHORT).show()
                 }
+                return true
+            }
+            android.R.id.home -> {
+                finish()
                 return true
             }
         }
@@ -208,7 +215,6 @@ class PostContentActivity : AppCompatActivity() {
         setOtherFields()
         setThumb()
         setPostText()
-//        setPostImage()
         Thread(Runnable {
             setCommentsInRV()
         }).start()
@@ -321,10 +327,9 @@ class PostContentActivity : AppCompatActivity() {
                             .into(post_image_id)
                 }
             } else {
-
                 Picasso.get().load(imageSrc)
-                        .placeholder(R.drawable.progress_animation)
                         .transform(ImageTransformation.getTransformation(post_image_id))
+                        .placeholder(R.drawable.progress_animation)
                         .into(post_image_id)
             }
             post_image_id.setOnClickListener(View.OnClickListener {
@@ -336,6 +341,7 @@ class PostContentActivity : AppCompatActivity() {
         postsImageLoadingCompleted = true
     }
 
+
     private fun saveImage() {
         runOnUiThread {
             val message = "Do you want to save this picture?"
@@ -343,10 +349,6 @@ class PostContentActivity : AppCompatActivity() {
                 title = "Saving Picture"
                 yesButton {
                     try {
-                        post_image_id.isDrawingCacheEnabled = true
-                        post_image_id.buildDrawingCache()
-                        val bitmap = Bitmap.createBitmap(post_image_id.drawingCache)
-
                         val root = Environment.getExternalStorageDirectory().toString()
                         val myDir = File(root + "/Topace/Pictures")
                         myDir.mkdirs()
@@ -356,14 +358,16 @@ class PostContentActivity : AppCompatActivity() {
                         val file = File(myDir, imageName)
                         if (file.exists()) file.delete()
                         val out = FileOutputStream(file)
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-                        out.flush()
-                        out.close()
-//                        val pathURI = file.toURI().toString()
+                        val bitmap = ImageTransformation.getBitmap()
+                        if (bitmap != null) {
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                            out.flush()
+                            out.close()
+                        } else throw Exception("No image found, couldn't save")
                         Toast.makeText(applicationContext, "Image ($imageName) is saved in Topace/Pictures/ directory",
                                 Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
-                        Log.i("PostContentActivity: ", e.message)
+                        Log.i("PostContentActivity:: ", e.message)
                         Toast.makeText(applicationContext, "Image saving failed :/", Toast.LENGTH_LONG).show()
                     }
                 }
@@ -412,5 +416,11 @@ class PostContentActivity : AppCompatActivity() {
         if (hasFocus) {
             setPostImage()
         }
+    }
+
+    override fun onDestroy() {
+        AdmobAds(applicationContext).showInterstitalAd(
+                Constants.MIN_ODD_FOR_INTER_AD_POST_CONTENT, Constants.MAX_ODD_FOR_INTER_AD_POST_CONTENT)
+        super.onDestroy()
     }
 }

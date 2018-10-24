@@ -14,14 +14,15 @@ import com.google.gson.reflect.TypeToken
 import java.util.*
 import kotlin.collections.ArrayList
 
-
 class AdmobAds(private val context: Context) {
 
-    private var mInterstitialAd: InterstitialAd? = null
-    private var mInterstitialAdLoaded = false
-    private val CLICKED_AD_LIMIT = 4
-    private val CLICKED_AD_LIMIT_PERIOD: Long = 3 * 60 * 60 * 1000
-    private val NO_ADS_DELAY: Long = 8 * 60 * 60 * 1000
+    companion object {
+        private var mInterstitialAd: InterstitialAd? = null
+        private var mInterstitialAdLoaded = false
+        private val CLICKED_AD_LIMIT = 4
+        private val CLICKED_AD_LIMIT_PERIOD: Long = 3 * 60 * 60 * 1000
+        private val NO_ADS_DELAY: Long = 8 * 60 * 60 * 1000
+    }
     private val postController = PostsController(context)
 
     fun loadInterstitialAdWithOdds(minOdd: Int, maxOdd: Int) {
@@ -50,10 +51,13 @@ class AdmobAds(private val context: Context) {
     }
 
     private fun isInterstitalAdLoaded(): Boolean {
-        return this.mInterstitialAdLoaded
+        return mInterstitialAdLoaded
     }
 
     fun showInterstitalAd(minOdd: Int = 0, maxOdd: Int = 0) {
+        if (ManageAds.hasPurchased(context)) {
+            return
+        }
         if (isInterstitalAdLoaded()) {
             mInterstitialAd?.show()
             mInterstitialAdLoaded = false

@@ -24,12 +24,14 @@
                 android:layout_marginEnd="7dp"
                 android:id="@+id/score"
                 android:text="24353"
+                android:textColor="#000000"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="subreddit"
+                android:textColor="#007F00"
                 android:id="@+id/subreddit_id"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
         </LinearLayout>

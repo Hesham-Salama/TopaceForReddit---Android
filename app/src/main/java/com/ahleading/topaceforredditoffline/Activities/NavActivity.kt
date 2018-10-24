@@ -17,6 +17,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Adapters.PostsRVAdapter
+import com.ahleading.topaceforredditoffline.Ads.ManageAds
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.Constants
 import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
@@ -26,6 +27,8 @@ import com.ahleading.topaceforredditoffline.R
 import com.ahleading.topaceforredditoffline.ViewsControl.AppRater
 import com.ahleading.topaceforredditoffline.ViewsControl.LinearLayoutManagerWrapper
 import com.ahleading.topaceforredditoffline.ViewsControl.WindowControl
+import com.anjlab.android.iab.v3.BillingProcessor
+import com.anjlab.android.iab.v3.TransactionDetails
 import com.google.android.gms.ads.MobileAds
 import kotlinx.android.synthetic.main.activity_nav.*
 import kotlinx.android.synthetic.main.app_bar_nav.*
@@ -34,7 +37,7 @@ import org.jetbrains.anko.noButton
 import org.jetbrains.anko.yesButton
 
 
-class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, BillingProcessor.IBillingHandler {
 
     private val GROUP_ID1 = 12
     private val GROUP_ID2 = 15
@@ -47,16 +50,19 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
     private var layoutManager: RecyclerView.LayoutManager? = null
     var menu: Menu? = null
     var isPending = false
+    lateinit var bp: BillingProcessor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nav)
         postsController = PostsController(this)
         initializeView()
+        initializeIAB()
         initializeAdsMode()
         populateNavView()
         checkJobsScheduling()
         Thread(Runnable {
+            regularCheckPurchase()
             updateRedditTimeLine(1)
             runOnUiThread {
                 AppRater.app_launched(this)
@@ -68,6 +74,18 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
         MobileAds.initialize(this, Constants.ADMOB_APP_ID)
     }
 
+    private fun initializeIAB() {
+        bp = BillingProcessor.newBillingProcessor(this, Constants.licenseKeyGooglePlayPurchases, this)
+        bp.initialize() // binds
+        AddSubredditActivity.billingProcessor = bp
+    }
+
+    private fun regularCheckPurchase() {
+        val isPurchased = bp.isPurchased(Constants.productID1)
+        ManageAds.setPurchased(isPurchased, applicationContext)
+        nav_view.menu.setGroupVisible(R.id.order_group, !isPurchased)
+    }
+
     private fun checkJobsScheduling() {
         val jobScheduler = this.getSystemService(
                 Context.JOB_SCHEDULER_SERVICE) as JobScheduler
@@ -76,7 +94,6 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
             editor.putBoolean(Constants.PERIODIC_FIRST_LAUNCH, false)
             editor.apply()
             ScheduleJobUtility.scheduleJob(this)
-
         }
     }
 
@@ -296,6 +313,26 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
                             updateRedditTimeLine(2, "popular")
                         }).start()
                     }
+                    R.id.order -> {
+                        val msg = "If you're satisfied with Topace, consider a very small donation. " +
+                                "We as a small team - AHLeading rely on them" +
+                                " to continue providing updates and make other helpful apps :)" +
+                                "\n\n1- All ads will be removed.\n2- Removing all limits on saving posts."
+                        alert(msg) {
+                            title = "No Ads!"
+                            positiveButton("Ok!") {
+                                val isOneTimePurchaseSupported = bp.isOneTimePurchaseSupported
+                                if (isOneTimePurchaseSupported) {
+                                    // launch payment flow
+                                    bp.purchase(this@NavActivity, Constants.productID1)
+                                } else {
+                                    Toast.makeText(applicationContext,
+                                            "In-App purchases are not available at the moment", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                            negativeButton("No, thanks") {}
+                        }.show()
+                    }
                     else -> {
                         when (item.groupId) {
                             GROUP_ID1 -> {
@@ -318,7 +355,9 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+        if (!bp.handleActivityResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
         Thread(Runnable {
             runOnUiThread {
                 WindowControl.disableAndDimWindow(this@NavActivity)
@@ -331,7 +370,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
                         postsController.sqlHelper.addToActiveSubsTable(subreddit)
                         runOnUiThread {
                             val activeSubs = postsController.sqlHelper.getActiveSubsTable()
-                            nav_view.getMenu().findItem(R.id.all_subreddits).isVisible = activeSubs.size > 1
+                            nav_view.menu.findItem(R.id.all_subreddits).isVisible = activeSubs.size > 1
                             val myMoveGroupItem = nav_view.menu.findItem(R.id.active_subreddits_id)
                             val subMenu = myMoveGroupItem.subMenu
                             subMenu.add(GROUP_ID1, Menu.NONE, Menu.NONE, subreddit)
@@ -421,7 +460,7 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
         if (activeSubGroup != null) {
             val submenu = activeSubGroup.subMenu
             val activeSubs = postsController.sqlHelper.getActiveSubsTable()
-            nav_view.getMenu().findItem(R.id.all_subreddits).isVisible = activeSubs.size > 1
+            nav_view.menu.findItem(R.id.all_subreddits).isVisible = activeSubs.size > 1
             for (item in activeSubs) {
                 submenu.add(GROUP_ID1, Menu.NONE, Menu.NONE, item)
             }
@@ -438,17 +477,17 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
 
     private fun refreshGroupInNavView(groupID: Int) {
         if (groupID == GROUP_ID1) {
-            val myMoveGroupItem = nav_view.getMenu().findItem(R.id.active_subreddits_id)
-            val subMenu = myMoveGroupItem.getSubMenu()
+            val myMoveGroupItem = nav_view.menu.findItem(R.id.active_subreddits_id)
+            val subMenu = myMoveGroupItem.subMenu
             subMenu.removeGroup(GROUP_ID1)
             val activeSubs = postsController.sqlHelper.getActiveSubsTable()
-            nav_view.getMenu().findItem(R.id.all_subreddits).isVisible = activeSubs.size > 1
+            nav_view.menu.findItem(R.id.all_subreddits).isVisible = activeSubs.size > 1
             for (item in activeSubs) {
                 subMenu.add(GROUP_ID1, Menu.NONE, Menu.NONE, item)
             }
         } else {
-            val myMoveGroupItem = nav_view.getMenu().findItem(R.id.arc_subreddits_id)
-            val subMenu = myMoveGroupItem.getSubMenu()
+            val myMoveGroupItem = nav_view.menu.findItem(R.id.arc_subreddits_id)
+            val subMenu = myMoveGroupItem.subMenu
             subMenu.removeGroup(GROUP_ID2)
             val archSubs = postsController.sqlHelper.getArchivedSubsTable()
             for (item in archSubs) {
@@ -477,9 +516,9 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
                 progress_layout.visibility = View.VISIBLE
             }
             if (subreddit.trim() == "" || subreddit.contains("+")) {
-                setTitle("Topace For Reddit")
+                title = "Topace For Reddit"
             } else {
-                setTitle("/r/$subreddit")
+                title = "/r/$subreddit"
             }
         }
         try {
@@ -525,5 +564,42 @@ class NavActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelected
                 no_posts_yet_id.visibility = View.VISIBLE
             }
         }
+    }
+
+    /////////////
+
+    override fun onBillingInitialized() {
+//        Toast.makeText(applicationContext,"Billing initialized.",Toast.LENGTH_LONG).show()
+    }
+
+    override fun onPurchaseHistoryRestored() {
+        Toast.makeText(this, "History restored", Toast.LENGTH_LONG).show()
+        val isPurchased = bp.isPurchased(Constants.productID1)
+        runOnUiThread {
+            nav_view.menu.setGroupVisible(R.id.order_group, !isPurchased)
+            ManageAds.setPurchased(isPurchased, applicationContext)
+        }
+    }
+
+    override fun onProductPurchased(productId: String, details: TransactionDetails?) {
+        Toast.makeText(applicationContext, getString(R.string.we_really_thank_you), Toast.LENGTH_LONG).show()
+        ManageAds.setPurchased(true, applicationContext)
+        runOnUiThread {
+            nav_view.menu.setGroupVisible(R.id.order_group, false)
+        }
+    }
+
+    override fun onBillingError(errorCode: Int, error: Throwable?) {
+//        Toast.makeText(applicationContext,"Billing error",Toast.LENGTH_LONG).show()
+    }
+
+    public override fun onDestroy() {
+        bp.release()
+        super.onDestroy()
+    }
+
+    override fun onResume() {
+        nav_view.menu.setGroupVisible(R.id.order_group, !ManageAds.hasPurchased(applicationContext))
+        super.onResume()
     }
 }

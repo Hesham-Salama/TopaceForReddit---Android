@@ -11,7 +11,7 @@ class ConstructRedditURL {
         private val ARTICLE_AMP = "&article="
         val secondPartRedditURL_TOP = "/top/?sort=top&limit=25"
         val secondPartRedditURL_TOP_100 = "/top/?sort=top&limit=100"
-        val secondPartRedditURL_NEW = "/new/"
+        val secondPartRedditURL_NEW = "/new/?limit=25"
         private val secondPartRedditURL_COMMENT = "/comments/article?&showmore=true"
         val secondPartDay = "&t=day"
         val secondPartWeek = "&t=week"

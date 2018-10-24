@@ -40,16 +40,6 @@
         </item>
     </group>
 
-
-    <group>
-        <item
-            android:id="@+id/reward_no_ads"
-            android:icon="@drawable/surprise"
-            android:title="@string/no_ads_free"
-            android:visible="false" />
-
-    </group>
-
     <group>
         <item
             android:id="@+id/saved_posts"
@@ -58,17 +48,14 @@
 
     </group>
 
+    <group android:id="@+id/order_group">
+        <item
+            android:id="@+id/order"
+            android:icon="@drawable/order"
+            android:title="@string/remove_ads" />
+    </group>
+
     <group>
-        <!--<item-->
-        <!--android:id="@+id/settings_id"-->
-        <!--android:icon="@drawable/settings"-->
-        <!--android:title="@string/settings" />-->
-
-        <!--<item-->
-        <!--android:id="@+id/contact_us_id"-->
-        <!--android:icon="@drawable/contactus"-->
-        <!--android:title="@string/contact_us" />-->
-
         <item
             android:id="@+id/about_id"
             android:icon="@drawable/about"

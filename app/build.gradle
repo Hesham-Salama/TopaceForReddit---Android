@@ -10,8 +10,8 @@ android {
         applicationId "com.ahleading.topaceforredditoffline"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 4
-        versionName "1.2.0"
+        versionCode 6
+        versionName "1.2.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -52,6 +52,7 @@ dependencies {
     implementation 'com.github.marcoscgdev:Licenser:1.0.2'
     implementation 'com.google.android.ads.consent:consent-library:1.0.6'
     implementation 'com.google.android.gms:play-services-ads:15.0.1'
+    implementation 'com.anjlab.android.iab.v3:library:1.0.44'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

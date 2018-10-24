@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#DFDFDF"
+    android:background="@drawable/background_2"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -17,7 +17,8 @@
         android:layout_height="match_parent"
         android:id="@+id/saved_posts_rv"
         android:scrollbars="vertical"
-        android:paddingTop="?attr/actionBarSize"
+        android:paddingTop="3dp"
+        android:layout_below="@id/toolbar_saved"
         xmlns:android="http://schemas.android.com/apk/res/android" />
 
     <TextView

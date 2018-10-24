@@ -3,19 +3,23 @@ package com.ahleading.topaceforredditoffline.Activities
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RelativeLayout
 import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Ads.AdmobAds
+import com.ahleading.topaceforredditoffline.Ads.ManageAds
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
 import com.ahleading.topaceforredditoffline.Model.Constants
 import com.ahleading.topaceforredditoffline.Model.ConstructRedditURL
 import com.ahleading.topaceforredditoffline.Model.SingletonServiceManager
 import com.ahleading.topaceforredditoffline.R
 import com.ahleading.topaceforredditoffline.ViewsControl.WindowControl
+import com.anjlab.android.iab.v3.BillingProcessor
 import kotlinx.android.synthetic.main.activity_add_subreddit.*
+import org.jetbrains.anko.alert
 import org.json.JSONObject
 
 
@@ -27,6 +31,9 @@ class AddSubredditActivity : AppCompatActivity() {
     private var admobInstance: AdmobAds? = null
     private lateinit var relativeLayout: RelativeLayout
 
+    companion object {
+        lateinit var billingProcessor: BillingProcessor
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +53,7 @@ class AddSubredditActivity : AppCompatActivity() {
         RGroup2.check(R.id.save_100_posts_rb)
         disableAllRGroup2Buttons()
 
-        RGroup.setOnCheckedChangeListener({ _, checkedId ->
+        RGroup.setOnCheckedChangeListener { _, checkedId ->
             val rb: RadioButton = findViewById(checkedId)
             selectedCheckBox = rb.text.toString()
             if (selectedCheckBox != getString(R.string.don_t_save_posts)) {
@@ -54,17 +61,15 @@ class AddSubredditActivity : AppCompatActivity() {
             } else {
                 disableAllRGroup2Buttons()
             }
-        })
+        }
 
-        RGroup2.setOnCheckedChangeListener(
-                { _, checkedId ->
-                    val rb: RadioButton = findViewById(checkedId)
-                    selectedCheckBox2 = rb.text.toString()
-                }
-        )
+        RGroup2.setOnCheckedChangeListener { _, checkedId ->
+            val rb: RadioButton = findViewById(checkedId)
+            selectedCheckBox2 = rb.text.toString()
+        }
 
         val saveSubredditButton: Button = findViewById(R.id.add_subreddit_button)
-        saveSubredditButton.setOnClickListener {
+        saveSubredditButton.setOnClickListener { it ->
             WindowControl.disableAndDimWindow(this@AddSubredditActivity)
             progress_layout_add_subreddit.visibility = View.VISIBLE
             var subreddit: String = editText.text.toString()
@@ -73,22 +78,46 @@ class AddSubredditActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (check != "OK") {
                         Toast.makeText(this, check, Toast.LENGTH_LONG).show()
-                        progress_layout_add_subreddit.visibility = View.GONE
-                        WindowControl.enableAndBrightWindow(this@AddSubredditActivity)
                     } else {
-                        subreddit = subreddit.substring(0, 1).toUpperCase() + subreddit.substring(1).toLowerCase()
-                        val data = Intent()
-                        data.putExtra("subreddit", subreddit)
-                        data.putExtra("checkboxString", selectedCheckBox)
-                        data.putExtra("checkboxString2", selectedCheckBox2)
-                        setResult(RESULT_OK, data)
-                        admobInstance!!.showInterstitalAd(Constants.MIN_ODD_FOR_INTER_AD_ADD_SUBREDDIT,
-                                Constants.MAX_ODD_FOR_INTER_AD_ADD_SUBREDDIT)
-                        finish()
+                        if (!ManageAds.hasPurchased(applicationContext) && selectedCheckBox != getString(R.string.don_t_save_posts)
+                                && selectedCheckBox2 != getString(R.string._100_posts)) {
+                            val msg = "Unlock saving up to 500 posts instead of 100 only!\n" +
+                                    "Please consider donating, supporting us to provide more updates and making new useful apps.\n\n" +
+                                    "1- Remove all ads from the app (100% no ads)." +
+                                    "\n2- Remove all limits on saved posts."
+                            this@AddSubredditActivity.alert(msg) {
+                                title = "Save up to 500 posts!"
+                                positiveButton("Ok!") {
+                                    val isOneTimePurchaseSupported = billingProcessor.isOneTimePurchaseSupported
+                                    if (isOneTimePurchaseSupported) {
+                                        // launch payment flow
+                                        billingProcessor.purchase(this@AddSubredditActivity, Constants.productID1)
+                                    } else {
+                                        Toast.makeText(applicationContext,
+                                                "In-App purchases are not available at the moment", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                                negativeButton("No, thanks.") {
+                                    progress_layout_add_subreddit.visibility = View.GONE
+                                    WindowControl.enableAndBrightWindow(this@AddSubredditActivity)
+                                }
+                            }.show()
+                        } else {
+                            subreddit = subreddit.substring(0, 1).toUpperCase() + subreddit.substring(1).toLowerCase()
+                            val data = Intent()
+                            data.putExtra("subreddit", subreddit)
+                            data.putExtra("checkboxString", selectedCheckBox)
+                            data.putExtra("checkboxString2", selectedCheckBox2)
+                            setResult(RESULT_OK, data)
+                            finish()
+                        }
                     }
+                    progress_layout_add_subreddit.visibility = View.GONE
+                    WindowControl.enableAndBrightWindow(this@AddSubredditActivity)
                 }
             }).start()
         }
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     fun disableAllRGroup2Buttons() {
@@ -155,6 +184,27 @@ class AddSubredditActivity : AppCompatActivity() {
         }
     }
 
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!billingProcessor.handleActivityResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    override fun onDestroy() {
+        admobInstance!!.showInterstitalAd(Constants.MIN_ODD_FOR_INTER_AD_ADD_SUBREDDIT,
+                Constants.MAX_ODD_FOR_INTER_AD_ADD_SUBREDDIT)
+        super.onDestroy()
+    }
 }
 
 

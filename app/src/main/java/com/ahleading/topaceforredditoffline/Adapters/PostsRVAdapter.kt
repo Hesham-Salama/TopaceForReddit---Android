@@ -11,9 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.ahleading.topaceforredditoffline.Activities.PostContentActivity
-import com.ahleading.topaceforredditoffline.Ads.AdmobAds
 import com.ahleading.topaceforredditoffline.Controllers.PostsController
-import com.ahleading.topaceforredditoffline.Model.Constants
 import com.ahleading.topaceforredditoffline.Model.PostData
 import com.ahleading.topaceforredditoffline.R
 import com.squareup.picasso.Picasso
@@ -49,7 +47,7 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
     private val URL_STR = "url"
     private val ALREADY_SAVED = "already_saved"
     private val NUMBER_OF_COMMENTS = "number_of_comments"
-    private val admob_instance = AdmobAds(context)
+//    private val admob_instance = AdmobAds(context)
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -152,8 +150,8 @@ class PostsRVAdapter(private val arrayList: ArrayList<PostData?>,
                 extras.putParcelable(THUMB, bitmap)
                 intent.putExtras(extras)
                 context.startActivity(intent)
-                admob_instance.showInterstitalAd(Constants.MIN_ODD_FOR_INTER_AD_POST_CONTENT,
-                        Constants.MAX_ODD_FOR_INTER_AD_POST_CONTENT)
+//                admob_instance.showInterstitalAd(Constants.MIN_ODD_FOR_INTER_AD_POST_CONTENT,
+//                        Constants.MAX_ODD_FOR_INTER_AD_POST_CONTENT)
             })
 
             itemView.setOnLongClickListener {

@@ -28,7 +28,7 @@
     <string name="test_interstitial_admob_id">ca-app-pub-3940256099942544/1033173712</string>
     <string name="interstitial_admob_id">ca-app-pub-3374269774143426/1268940139</string>
     <string name="privacy_policy_html">https://hesham-salama.github.io/privacypolicy.html</string>
-    <string name="version">Version 1.2.0</string>
+    <string name="version">Version 1.2.2</string>
     <string name="contact_email">contact.ahleading@gmail.com</string>
     <string name="package_store">com.ahleading.topaceforredditoffline</string>
     <string name="number_of_root_comments">Number of root comments: </string>
@@ -61,6 +61,8 @@
     <string name="_500_posts">500 posts</string>
     <string name="post_s_image">Post\'s image</string>
     <string name="saved_posts">Saved Posts</string>
+    <string name="remove_ads">Remove Ads!</string>
+    <string name="we_really_thank_you">We really appreciate it! Thank you!</string>
 
     <plurals name="point_plural">
         <item quantity="one">%1$d point</item>
